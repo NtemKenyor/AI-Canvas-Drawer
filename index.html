@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Painter/Brush</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js"></script>
+
+</head>
+<body>
+  <canvas id="aiCanvas"></canvas>
+  <div id="floatingBar">
+    <div id="menuBar">
+      <button id="menuButton">Menu</button>
+    </div>
+    <input type="text" id="promptInput" placeholder="Describe your imagination...">
+    <button id="submitButton">Submit</button>
+  </div>
+  <div id="menuPopup" class="popup">
+    <h3>User Menu</h3>
+    <p>Username: <span id="username">JohnDoe</span></p>
+    <p>Wallet Balance: <span id="walletBalance">0.00 SOL</span></p>
+    <p>Proposed Wallet Address: <span id="walletAddress">abcd1234...</span></p>
+    <button id="closeMenu">Close</button>
+  </div>
+
+  <!-- Overlay and Spinner -->
+  <div id="overlay"></div>
+  <div class="spinner"></div>
+  <div class="error-popup"></div>
+
+  
+</body>
+</html>
