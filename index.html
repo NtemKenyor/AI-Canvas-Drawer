@@ -4,12 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Painter/Brush</title>
+  
+  <!-- DSCVR Canvas Meta Tags -->
+  <meta name="dscvr:canvas:version" content="vNext">
+  <meta name="og:image" content="https://roynek.com/AI-Canvas-Drawer/ai-canvas-draw.png">
+  
+  <!-- Stylesheet and Script -->
   <link rel="stylesheet" href="styles.css">
   <script src="script.js"></script>
-
+  
+  <!-- Content Security Policy (Optional) -->
+  <!-- 
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.dscvr.one; style-src 'self' https://apis.dscvr.one;"> 
+  -->
 </head>
 <body>
   <canvas id="aiCanvas"></canvas>
+  
   <div id="floatingBar">
     <div id="menuBar">
       <button id="menuButton">Menu</button>
@@ -17,6 +28,7 @@
     <input type="text" id="promptInput" placeholder="Describe your imagination...">
     <button id="submitButton">Submit</button>
   </div>
+  
   <div id="menuPopup" class="popup">
     <h3>User Menu</h3>
     <p>Username: <span id="username">JohnDoe</span></p>
@@ -30,6 +42,5 @@
   <div class="spinner"></div>
   <div class="error-popup"></div>
 
-  
 </body>
 </html>
