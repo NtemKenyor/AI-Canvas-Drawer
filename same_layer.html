@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Painter/Brush</title>
+  
+  <!-- DSCVR Canvas Meta Tags -->
+  <meta name="dscvr:canvas:version" content="vNext">
+  <meta name="og:image" content="https://roynek.com/AI-Canvas-Drawer/ai-canvas-draw.png">
+  
+  <!-- Stylesheet and Script -->
+  <!-- <link rel="stylesheet" href="styles.css">
+  <script src="script.js"></script> -->
+<style>
+    
+/* styles.css */
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+}
+
+#aiCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+#floatingBar {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: calc(100% - 40px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+#promptInput {
+    width: 70%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#submitButton {
+    padding: 8px 16px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#menuBar {
+    flex-grow: 1;
+}
+
+#menuButton {
+    padding: 8px 16px;
+    background-color: #28A745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+}
+
+.popup.active {
+    display: block;
+}
+
+#closeMenu {
+    margin-top: 20px;
+    padding: 8px 16px;
+    background-color: #DC3545;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+
+/* Add styles for spinner */
+.spinner {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 2s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    display: none;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Add styles for the overlay */
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
+}
+
+.error-popup {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  padding: 20px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  display: none;
+}
+
+</style>
+
+<script>
+        console.log("connected");
+    
+    // script.js
+    document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('aiCanvas');
+        const ctx = canvas.getContext('2d');
+        const promptInput = document.getElementById('promptInput');
+        const submitButton = document.getElementById('submitButton');
+        const menuButton = document.getElementById('menuButton');
+        const menuPopup = document.getElementById('menuPopup');
+        const closeMenu = document.getElementById('closeMenu');
+        const overlay = document.getElementById('overlay');
+        const spinner = document.querySelector('.spinner');
+        const errorPopup = document.querySelector('.error-popup');
+        const PAINTER_URL = 'https://roynek.com/AI-Viddor/API/generate-paint'
+      
+        // Set canvas dimensions
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      
+        // Function to show the spinner
+        function showSpinner() {
+          overlay.style.display = 'block';
+          spinner.style.display = 'block';
+        }
+      
+        // Function to hide the spinner
+        function hideSpinner() {
+          overlay.style.display = 'none';
+          spinner.style.display = 'none';
+        }
+      
+        // Function to show the error popup
+        function showErrorPopup(message) {
+          errorPopup.textContent = message;
+          errorPopup.style.display = 'block';
+        }
+      
+        // Clear canvas function
+        function clearCanvas() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      
+      
+        function getShapesFromElements(elements) {
+            // Define possible paths where the shapes array might be located
+            const possiblePaths = [
+                elements.shapes,
+                elements,
+                elements.canvas_elements?.shapes,
+                elements.canvas_elements
+            ];
+      
+            // Find and return the first valid shapes array
+            for (const path of possiblePaths) {
+                if (Array.isArray(path)) {
+                    return path;
+                }
+            }
+      
+            // If no valid shapes array is found, return an empty array or handle the error
+            console.error("No valid shapes array found in the provided elements.");
+            return [];
+        }
+      
+      
+        // Assuming extractCanvasElements is your function to parse the JSON from the AI response
+        function extractCanvasElements(aiResponse) {
+            // Find the first opening bracket '{' or '['
+            const startIndex = aiResponse.search(/[\{\[]/);
+      
+            // If no opening bracket is found, return null
+            if (startIndex === -1) {
+                console.error("No JSON structure found in the response.");
+                return null;
+            }
+      
+            // Find the last closing bracket '}' or ']'
+            const endIndex = aiResponse.lastIndexOf('}') > aiResponse.lastIndexOf(']') 
+                ? aiResponse.lastIndexOf('}') 
+                : aiResponse.lastIndexOf(']');
+      
+            // If no closing bracket is found, return null
+            if (endIndex === -1) {
+                console.error("No JSON structure found in the response.");
+                return null;
+            }
+      
+            // Extract the JSON-like substring
+            const jsonString = aiResponse.substring(startIndex, endIndex + 1).replace(/'/g, '"');
+      
+            // Try to parse it as JSON
+            try {
+                const canvasElements = JSON.parse(jsonString);
+                console.log(canvasElements.canvas_elements);
+                return canvasElements.canvas_elements;
+            } catch (e) {
+                console.error("Error decoding JSON:", e);
+                return null;
+            }
+        }
+      
+      
+      // Function to create a delay
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Function to draw on the canvas using shapes with a delay for each shape
+        async function drawCanvasElements(elements, ctx, delayTime = 500, inner_timers=500) {
+            // Use getShapesFromElements to safely retrieve the shapes array
+            const shapes = getShapesFromElements(elements);
+
+            if (shapes.length === 0) {
+                console.error("No shapes to draw.");
+                return;
+            }
+
+            for (const element of shapes) {
+                console.log("drawing: " + JSON.stringify(element));
+
+                switch (element.type) {
+                    case 'ellipse':
+                        ctx.beginPath();
+                        ctx.ellipse(element.cx, element.cy, element.rx, element.ry, 0, 0, 2 * Math.PI);
+                        await delay(inner_timers);
+                        ctx.fillStyle = element.color;
+                        ctx.fill();
+                        break;
+
+                    case 'rectangle':
+                        ctx.beginPath();
+                        ctx.rect(element.x, element.y, element.width, element.height);
+                        await delay(inner_timers);
+                        ctx.fillStyle = element.color;
+                        ctx.fill();
+                        ctx.lineWidth = element.borderWidth;
+                        ctx.strokeStyle = element.borderColor;
+                        ctx.stroke();
+                        break;
+
+                    case 'line':
+                        ctx.beginPath();
+                        ctx.moveTo(element.x1, element.y1);
+                        ctx.lineTo(element.x2, element.y2);
+                        await delay(inner_timers);
+                        ctx.strokeStyle = element.color;
+                        ctx.lineWidth = element.lineWidth;
+                        ctx.stroke();
+                        break;
+
+                    case 'text':
+                        ctx.font = element.font;
+                        await delay(inner_timers);
+                        ctx.fillStyle = element.color;
+                        ctx.fillText(element.text, element.x, element.y);
+                        break;
+
+                    case 'dot':
+                        ctx.beginPath();
+                        ctx.arc(element.x, element.y, element.radius, 0, 2 * Math.PI);
+                        ctx.fillStyle = element.color;
+                        ctx.fill();
+                        break;
+
+                    case 'multi-dot':
+                        element.positions.forEach(position => {
+                            ctx.beginPath();
+                            ctx.arc(position.x, position.y, element.radius, 0, 2 * Math.PI);
+                            ctx.fillStyle = element.color;
+                            ctx.fill();
+                        });
+                        break;
+
+                    case 'arc':
+                        ctx.beginPath();
+                        ctx.arc(element.cx, element.cy, element.radius, element.startAngle, element.endAngle);
+                        await delay(inner_timers);
+                        ctx.strokeStyle = element.color;
+                        ctx.lineWidth = element.lineWidth;
+                        ctx.stroke();
+                        break;
+
+                    case 'circle':
+                        ctx.beginPath();
+                        ctx.arc(element.cx, element.cy, element.radius, 0, 2 * Math.PI);
+                        await delay(inner_timers);
+                        ctx.fillStyle = element.color;
+                        ctx.fill();
+                        ctx.lineWidth = element.borderWidth;
+                        ctx.strokeStyle = element.borderColor;
+                        ctx.stroke();
+                        break;
+
+                    default:
+                        console.log(`Unknown shape type: ${element.type}`);
+                }
+
+                // Delay before drawing the next shape
+                await delay(delayTime);
+            }
+        }
+
+      
+        
+        // Submit button event listener
+submitButton.addEventListener('click', () => {
+    if (confirm('You may lose this nice drawing. Do you want to continue?')) {
+  
+      // Clear the canvas
+      clearCanvas();
+      
+      const prompt = promptInput.value;
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+  
+      // Send prompt and canvas dimensions to the AI API
+      const requestData = {
+        prompt,
+        canvasWidth,
+        canvasHeight
+      };
+  
+      // Show spinner
+      showSpinner();
+  
+      // Mock API request (replace with actual API call)
+      fetch(PAINTER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      })
+      .then(response => response.json())
+      .then(async data => {  // Mark the function as async to use await
+        console.log(data);
+  
+        hideSpinner();
+        // Use the standardized JSON to draw on the canvas
+        const drawables = extractCanvasElements(data.text);
+        
+        // Await the drawing process with delay
+        await drawCanvasElements(drawables, ctx, 1000); // 1000ms delay between each shape
+      })
+      .catch(error => {
+        hideSpinner();
+        showErrorPopup('Error: ' + error.message);
+        console.error('Error:', error);
+      });
+    }
+  });
+  
+        // Submit button event listener
+        // submitButton.addEventListener('click', () => {
+        //   if (confirm('You may lose this nice drawing. Do you want to continue?')) {
+      
+        //     // Clear the canvas
+        //     clearCanvas();
+            
+        //     const prompt = promptInput.value;
+        //     const canvasWidth = canvas.width;
+        //     const canvasHeight = canvas.height;
+      
+        //     // Send prompt and canvas dimensions to the AI API
+        //     const requestData = {
+        //       prompt,
+        //       canvasWidth,
+        //       canvasHeight
+        //     };
+      
+        //     // Show spinner
+        //     showSpinner();
+      
+        //     // Mock API request (replace with actual API call)
+        //     fetch(PAINTER_URL, {
+        //       method: 'POST',
+        //       headers: {
+        //         'Content-Type': 'application/json',
+        //       },
+        //       body: JSON.stringify(requestData),
+        //     })
+        //     .then(response => response.json())
+        //     .then(data => {
+        //       console.log(data);
+      
+        //       hideSpinner();
+        //       // Use the standardized JSON to draw on the canvas
+        //       var drawables = extractCanvasElements(data.text);
+        //       drawCanvasElements(drawables, ctx);
+              
+        //       // drawCanvasElements(data.canvasElements);
+        //     })
+        //     .catch(error => {
+        //       hideSpinner();
+        //       showErrorPopup('Error: ' + error.message);
+        //       console.error('Error:', error);
+        //     });
+        //   }
+        // });
+      
+        // Menu button event listener
+        menuButton.addEventListener('click', () => {
+          menuPopup.classList.toggle('active');
+        });
+      
+        // Close menu button event listener
+        closeMenu.addEventListener('click', () => {
+          menuPopup.classList.remove('active');
+        });
+      
+      
+
+        // Example Usage
+      const data = {
+            text: "{\n  \"canvas_elements\": {\n    \"shapes\": [\n      {\n        \"type\": \"rectangle\",\n        \"x\": 400,\n        \"y\": 350,\n        \"width\": 50,\n        \"height\": 200,\n        \"color\": \"#8B4513\",\n        \"borderColor\": \"black\",\n        \"borderWidth\": 2\n      },\n      {\n        \"type\": \"ellipse\",\n        \"cx\": 425,\n        \"cy\": 200,\n        \"rx\": 100,\n        \"ry\": 150,\n        \"color\": \"#008000\"\n      },\n      {\n        \"type\": \"ellipse\",\n        \"cx\": 350,\n        \"cy\": 300,\n        \"rx\": 70,\n        \"ry\": 100,\n        \"color\": \"#008000\"\n      },\n      {\n        \"type\": \"ellipse\",\n        \"cx\": 500,\n        \"cy\": 300,\n        \"rx\": 70,\n        \"ry\": 100,\n        \"color\": \"#008000\"\n      }\n    ]\n  }\n}"
+        };
+        
+        const dataFrame = extractCanvasElements(data.text);
+        // drawCanvasElements(dataFrame, ctx);
+
+        // Function to start drawing with a delay
+        async function startDrawing() {
+            await drawCanvasElements(dataFrame, ctx, 1000); // 1000ms delay between each shape
+        }
+
+        // Call the startDrawing function to begin
+        startDrawing();
+        
+    });
+      
+
+</script>
+  <!-- Content Security Policy (Optional) -->
+  <!-- 
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.dscvr.one; style-src 'self' https://apis.dscvr.one;"> 
+  -->
+</head>
+<body>
+  <canvas id="aiCanvas"></canvas>
+  
+  <div id="floatingBar">
+    <div id="menuBar">
+      <button id="menuButton">Menu</button>
+    </div>
+    <input type="text" id="promptInput" placeholder="Describe your imagination...">
+    <button id="submitButton">Submit</button>
+  </div>
+  
+  <div id="menuPopup" class="popup">
+    <h3>User Menu</h3>
+    <p>Username: <span id="username">JohnDoe</span></p>
+    <p>Wallet Balance: <span id="walletBalance">0.00 SOL</span></p>
+    <p>Proposed Wallet Address: <span id="walletAddress">abcd1234...</span></p>
+    <button id="closeMenu">Close</button>
+  </div>
+
+  <!-- Overlay and Spinner -->
+  <div id="overlay"></div>
+  <div class="spinner"></div>
+  <div class="error-popup"></div>
+
+</body>
+</html>
