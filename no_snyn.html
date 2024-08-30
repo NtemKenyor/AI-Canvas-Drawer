@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Painter/Brush</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* styles.css */
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+#aiCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#floatingBar {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: calc(100% - 40px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+#promptInput {
+  width: 70%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+#submitButton {
+  padding: 8px 16px;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#menuBar {
+  flex-grow: 1;
+}
+
+#menuButton {
+  padding: 8px 16px;
+  background-color: #28A745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+}
+
+.popup.active {
+  display: block;
+}
+
+#closeMenu {
+  margin-top: 20px;
+  padding: 8px 16px;
+  background-color: #DC3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+  </style>
+
+  <script>
+    // script.js
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('aiCanvas');
+  const ctx = canvas.getContext('2d');
+  const promptInput = document.getElementById('promptInput');
+  const submitButton = document.getElementById('submitButton');
+  const menuButton = document.getElementById('menuButton');
+  const menuPopup = document.getElementById('menuPopup');
+  const closeMenu = document.getElementById('closeMenu');
+  const PAINTER_URL = 'https://roynek.com/AI-Viddor/API/generate-paint'
+
+  // Set canvas dimensions
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  canvas_element = [
+      {
+        "type": "rectangle",
+        "x": 450,
+        "y": 700,
+        "width": 100,
+        "height": 200,
+        "color": "rgba(139, 69, 19, 1)",
+        "borderColor": "black",
+        "borderWidth": 2
+      },
+      {
+        "type": "ellipse",
+        "cx": 500,
+        "cy": 550,
+        "rx": 200,
+        "ry": 300,
+        "color": "rgba(34, 139, 34, 1)"
+      },
+      {
+        "type": "ellipse",
+        "cx": 500,
+        "cy": 300,
+        "rx": 150,
+        "ry": 200,
+        "color": "rgba(34, 139, 34, 1)"
+      },
+      {
+        "type": "ellipse",
+        "cx": 500,
+        "cy": 100,
+        "rx": 100,
+        "ry": 150,
+        "color": "rgba(34, 139, 34, 1)"
+      }
+    ];
+
+
+
+  //   function extractCanvasElements(aiResponse) {
+  //     // Regular expression to capture JSON-like structures (either objects or arrays)
+  //     const regex = /=\s*(\[[\s\S]*\]|\{[\s\S]*\})/;
+  //     const match = aiResponse.match(regex);
+
+  //     if (match) {
+  //         let jsonString = match[1].replace(/'/g, '"');  // Replace single quotes with double quotes for JSON compatibility
+          
+  //         // Try to parse it as JSON
+  //         try {
+  //             const canvasElements = JSON.parse(jsonString);
+  //             return canvasElements;
+  //         } catch (e) {
+  //             console.error("Error decoding JSON:", e);
+  //             return null;
+  //         }
+  //     } else {
+  //         console.error("No JSON structure found in the response.");
+  //         return null;
+  //     }
+  // }
+
+  function extractCanvasElements(aiResponse) {
+      // Find the first opening bracket '{' or '['
+      const startIndex = aiResponse.search(/[\{\[]/);
+
+      // If no opening bracket is found, return null
+      if (startIndex === -1) {
+          console.error("No JSON structure found in the response.");
+          return null;
+      }
+
+      // Find the last closing bracket '}' or ']'
+      const endIndex = aiResponse.lastIndexOf('}') > aiResponse.lastIndexOf(']') 
+          ? aiResponse.lastIndexOf('}') 
+          : aiResponse.lastIndexOf(']');
+
+      // If no closing bracket is found, return null
+      if (endIndex === -1) {
+          console.error("No JSON structure found in the response.");
+          return null;
+      }
+
+      // Extract the JSON-like substring
+      const jsonString = aiResponse.substring(startIndex, endIndex + 1).replace(/'/g, '"');
+
+      // Try to parse it as JSON
+      try {
+          const canvasElements = JSON.parse(jsonString);
+          console.log(canvasElements.canvas_elements);
+          return canvasElements.canvas_elements;
+      } catch (e) {
+          console.error("Error decoding JSON:", e);
+          return null;
+      }
+  }
+
+    function drawCanvasElements(elements, ctx) {
+      // Check if elements contains a shapes array or if it's the array of shapes itself
+      const shapes = elements.shapes || elements || elements.canvas_elements.shapes || elements.canvas_elements;
+      console.log(shapes);
+
+      shapes.forEach(element => {
+          console.log("drawing: " + JSON.stringify(element));
+
+          switch (element.type) {
+              case 'ellipse':
+                  ctx.beginPath();
+                  ctx.ellipse(element.cx, element.cy, element.rx, element.ry, 0, 0, 2 * Math.PI);
+                  ctx.fillStyle = element.color;
+                  ctx.fill();
+                  break;
+
+              case 'rectangle':
+                  ctx.beginPath();
+                  ctx.rect(element.x, element.y, element.width, element.height);
+                  ctx.fillStyle = element.color;
+                  ctx.fill();
+                  ctx.lineWidth = element.borderWidth;
+                  ctx.strokeStyle = element.borderColor;
+                  ctx.stroke();
+                  break;
+
+              case 'line':
+                  ctx.beginPath();
+                  ctx.moveTo(element.x1, element.y1);
+                  ctx.lineTo(element.x2, element.y2);
+                  ctx.strokeStyle = element.color;
+                  ctx.lineWidth = element.lineWidth;
+                  ctx.stroke();
+                  break;
+
+              case 'text':
+                  ctx.font = element.font;
+                  ctx.fillStyle = element.color;
+                  ctx.fillText(element.text, element.x, element.y);
+                  break;
+
+              case 'dot':
+                  ctx.beginPath();
+                  ctx.arc(element.x, element.y, element.radius, 0, 2 * Math.PI);
+                  ctx.fillStyle = element.color;
+                  ctx.fill();
+                  break;
+
+              case 'multi-dot':
+                  element.positions.forEach(position => {
+                      ctx.beginPath();
+                      ctx.arc(position.x, position.y, element.radius, 0, 2 * Math.PI);
+                      ctx.fillStyle = element.color;
+                      ctx.fill();
+                  });
+                  break;
+
+              case 'arc':
+                  ctx.beginPath();
+                  ctx.arc(element.cx, element.cy, element.radius, element.startAngle, element.endAngle);
+                  ctx.strokeStyle = element.color;
+                  ctx.lineWidth = element.lineWidth;
+                  ctx.stroke();
+                  break;
+
+              case 'circle':
+                  ctx.beginPath();
+                  ctx.arc(element.cx, element.cy, element.radius, 0, 2 * Math.PI);
+                  ctx.fillStyle = element.color;
+                  ctx.fill();
+                  ctx.lineWidth = element.borderWidth;
+                  ctx.strokeStyle = element.borderColor;
+                  ctx.stroke();
+                  break;
+
+              default:
+                  console.log(`Unknown shape type: ${element.type}`);
+          }
+      });
+  }
+
+
+  // Submit button event listener
+  submitButton.addEventListener('click', () => {
+    const prompt = promptInput.value;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+
+    // Send prompt and canvas dimensions to the AI API
+    const requestData = {
+      prompt,
+      canvasWidth,
+      canvasHeight
+    };
+
+    // Mock API request (replace with actual API call)
+    fetch(PAINTER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData),
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+      // Use the standardized JSON to draw on the canvas
+      var drawables = extractCanvasElements(data.text);
+      drawCanvasElements(drawables, ctx);
+      
+      // drawCanvasElements(data.canvasElements);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+  });
+
+  // Menu button event listener
+  menuButton.addEventListener('click', () => {
+    menuPopup.classList.toggle('active');
+  });
+
+  // Close menu button event listener
+  closeMenu.addEventListener('click', () => {
+    menuPopup.classList.remove('active');
+  });
+
+
+  data = {"text": "{\n  \"canvas_elements\": {\n    \"shapes\": [\n      {\n        \"type\": \"rectangle\",\n        \"x\": 400,\n        \"y\": 350,\n        \"width\": 50,\n        \"height\": 200,\n        \"color\": \"#8B4513\",\n        \"borderColor\": \"black\",\n        \"borderWidth\": 2\n      },\n      {\n        \"type\": \"ellipse\",\n        \"cx\": 425,\n        \"cy\": 200,\n        \"rx\": 100,\n        \"ry\": 150,\n        \"color\": \"#008000\"\n      },\n      {\n        \"type\": \"ellipse\",\n        \"cx\": 350,\n        \"cy\": 300,\n        \"rx\": 70,\n        \"ry\": 100,\n        \"color\": \"#008000\"\n      },\n      {\n        \"type\": \"ellipse\",\n        \"cx\": 500,\n        \"cy\": 300,\n        \"rx\": 70,\n        \"ry\": 100,\n        \"color\": \"#008000\"\n      }\n    ]\n  }\n}"};
+  data_frame = extractCanvasElements(data.text);
+  drawCanvasElements(data_frame, ctx);
+});
+
+  </script>
+</head>
+<body>
+  <canvas id="aiCanvas"></canvas>
+  <div id="floatingBar">
+    <div id="menuBar">
+      <button id="menuButton">Menu</button>
+    </div>
+    <input type="text" id="promptInput" placeholder="Describe your imagination...">
+    <button id="submitButton">Submit</button>
+  </div>
+  <div id="menuPopup" class="popup">
+    <h3>User Menu</h3>
+    <p>Username: <span id="username">JohnDoe</span></p>
+    <p>Wallet Balance: <span id="walletBalance">0.00 SOL</span></p>
+    <p>Proposed Wallet Address: <span id="walletAddress">ACdhuti57ghrhghgidifjhgtugjf6739dfhur</span></p>
+    <button id="closeMenu">Close</button>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
