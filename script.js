@@ -204,8 +204,8 @@
       
         
         // Submit button event listener
-submitButton.addEventListener('click', () => {
-    if (confirm('You may lose this nice drawing. Do you want to continue?')) {
+submitButton.addEventListener('click', async () => {
+    if (await confirm_('You may lose this nice drawing. Do you want to continue?')) {
   
       // Clear the canvas
       clearCanvas();
