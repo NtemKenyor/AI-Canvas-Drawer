@@ -8,10 +8,20 @@
   <!-- DSCVR Canvas Meta Tags -->
   <meta name="dscvr:canvas:version" content="vNext">
   <meta name="og:image" content="https://roynek.com/AI-Canvas-Drawer/ai-canvas-draw.png">
+
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self'; 
+    script-src 'self' https://apis.example.com https://cdn.jsdelivr.net; 
+    script-src-elem 'self' https://apis.example.com https://cdn.jsdelivr.net; 
+    style-src 'self' 'unsafe-inline' https://cdn.example.com; 
+    img-src 'self' https://your-image-host.com; 
+    font-src 'self' https://fonts.gstatic.com; 
+    connect-src 'self' https://api.solana.com;">
   
   <!-- Stylesheet and Script -->
   <link rel="stylesheet" href="styles.css">
   <script src="script.js"></script>
+  
   
   <!-- Content Security Policy (Optional) -->
   <!-- 
