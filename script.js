@@ -15,8 +15,8 @@
         const PAINTER_URL = 'https://roynek.com/AI-Viddor/API/generate-paint'
       
         // Set canvas dimensions
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // canvas.width = window.innerWidth;
+        // canvas.height = window.innerHeight;
       
         // Function to show the spinner
         function showSpinner() {
