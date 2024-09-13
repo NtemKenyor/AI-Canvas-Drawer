@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Painter/Brush</title>
+  
+  <!-- DSCVR Canvas Meta Tags -->
+  <meta name="dscvr:canvas:version" content="vNext">
+  <meta name="og:image" content="https://roynek.com/AI-Canvas-Drawer/ai-canvas-draw.png">
+
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self'; 
+    script-src 'self' https://apis.example.com https://cdn.jsdelivr.net https://roynek.com 'unsafe-eval' 'wasm-unsafe-eval'; 
+    script-src-elem 'self' https://apis.example.com https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval'; 
+    style-src 'self' 'unsafe-inline' https://cdn.example.com; 
+    img-src 'self' https://your-image-host.com; 
+    font-src 'self' https://fonts.gstatic.com; 
+    connect-src 'self' https://api.solana.com https://roynek.com;">
+
+  
+  <!-- Stylesheet and Script -->
+  <link rel="stylesheet" href="styles.css">
+  <script src="script_pops.js" defer></script>
+  <script src="script.js" defer></script>
+  
+  
+  <!-- Content Security Policy (Optional) -->
+  <!-- 
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.dscvr.one; style-src 'self' https://apis.dscvr.one;"> 
+  -->
+</head>
+<body>
+  <canvas id="aiCanvas"></canvas>
+  
+  <div id="floatingBar">
+    <div id="menuBar">
+      <button id="menuButton">Menu</button>
+    </div>
+    <input type="text" id="promptInput" placeholder="Describe your imagination...">
+    <button id="submitButton">Submit</button>
+  </div>
+  
+  <div id="menuPopup" class="popup">
+    <h3>User Menu</h3>
+    <p>Username: <span id="username">JohnDoe</span></p>
+    <p>Wallet Balance: <span id="walletBalance">0.00 SOL</span></p>
+    <p>Proposed Wallet Address: <span id="walletAddress">abcd1234...</span></p>
+    <button id="closeMenu">Close</button>
+  </div>
+
+  <!-- Overlay and Spinner -->
+  <div id="overlay"></div>
+  <div class="spinner"></div>
+  <div class="error-popup"></div>
+
+</body>
+</html>
