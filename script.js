@@ -92,8 +92,13 @@
             // Try to parse it as JSON
             try {
                 const canvasElements = JSON.parse(jsonString);
-                console.log(canvasElements.canvas_elements);
-                return canvasElements.canvas_elements;
+                console.log(canvasElements);
+                if(canvasElements.canvas_elements){
+                  return canvasElements.canvas_elements;
+                }else{
+                  return canvasElements;
+                }
+                
             } catch (e) {
                 console.error("Error decoding JSON:", e);
                 return null;
