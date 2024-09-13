@@ -11,12 +11,13 @@
 
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self'; 
-    script-src 'self' https://apis.example.com https://cdn.jsdelivr.net https://roynek.com; 
-    script-src-elem 'self' https://apis.example.com https://cdn.jsdelivr.net https://roynek.com; 
+    script-src 'self' https://apis.example.com https://cdn.jsdelivr.net https://roynek.com 'unsafe-eval' 'wasm-unsafe-eval'; 
+    script-src-elem 'self' https://apis.example.com https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval'; 
     style-src 'self' 'unsafe-inline' https://cdn.example.com; 
     img-src 'self' https://your-image-host.com; 
     font-src 'self' https://fonts.gstatic.com; 
-    connect-src 'self' https://api.solana.com;">
+    connect-src 'self' https://api.solana.com https://roynek.com;">
+
   
   <!-- Stylesheet and Script -->
   <link rel="stylesheet" href="styles.css">
